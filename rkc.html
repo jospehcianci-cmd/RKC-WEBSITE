@@ -4,7 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>$RKC — Red Kitten Crew</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="256x256" href="favicon-256.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="description" content="Red Kitten Crew ($RKC) — a community takeover on Solana. Live chart, live stats, no team, no floor to sell.">
+<meta property="og:title" content="RED KITTEN CREW">
+<meta property="og:description" content="No team allocation, no roadmap promises, just a crew that holds the line and prints the memes while the chart does whatever it wants.">
+<meta property="og:image" content="headband-social.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RED KITTEN CREW">
+<meta name="twitter:description" content="No team allocation, no roadmap promises, just a crew that holds the line and prints the memes while the chart does whatever it wants.">
+<meta name="twitter:image" content="headband-social.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -235,6 +246,32 @@
   .section-tag{ font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--blood); letter-spacing:0.16em; margin-bottom:16px; }
   h2{ font-family:'Anton', sans-serif; text-transform:uppercase; font-size:clamp(2rem, 5vw, 3.5rem); margin-bottom:34px; max-width:780px; }
 
+  /* ---------- headband tool ---------- */
+  .band-lead{ color:#c9bdb8; max-width:560px; margin:-14px 0 34px; font-size:0.98rem; }
+  .band-tool{ display:flex; flex-direction:column; align-items:center; gap:22px; }
+  .band-stage{ width:100%; max-width:460px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .band-frame{
+    position:relative; width:100%; aspect-ratio:1/1; background:var(--panel);
+    border:1px solid var(--border); overflow:hidden;
+  }
+  .band-frame canvas{ width:100%; height:100%; display:block; touch-action:none; }
+  .band-frame.has-image canvas{ cursor:grab; }
+  .band-frame.has-image canvas:active{ cursor:grabbing; }
+  .band-drop{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    color:var(--static); cursor:pointer; text-align:center; padding:20px; transition:color 0.2s ease, border-color 0.2s ease;
+    border:1px dashed var(--border);
+  }
+  .band-drop:hover, .band-drop:focus-visible, .band-drop.drag-over{ color:var(--ash); border-color:var(--blood); }
+  .band-drop p{ font-family:'JetBrains Mono', monospace; font-size:0.82rem; line-height:1.5; }
+  .band-drop p span{ color:var(--static); font-size:0.72rem; }
+  .band-frame.has-image .band-drop{ display:none; }
+  .band-hint{ font-size:0.7rem; color:var(--static); text-align:center; letter-spacing:0.02em; }
+  .band-status{ font-size:0.72rem; color:var(--amber); text-align:center; min-height:1em; }
+  .band-controls{ display:none; flex-wrap:wrap; gap:12px; justify-content:center; }
+  .band-controls.show{ display:flex; }
+  .band-btn{ padding:12px 18px; font-size:0.76rem; }
+
   /* ---------- manifesto ---------- */
   .manifesto{ display:grid; grid-template-columns:1.1fr 1fr; gap:60px; align-items:start; }
   @media (max-width:860px){ .manifesto{grid-template-columns:1fr;} }
@@ -364,6 +401,11 @@
     body.has-fine-pointer{ cursor:auto; }
   }
   :focus-visible{ outline:2px solid var(--amber); outline-offset:3px; }
+  @media (max-width:760px){
+    .cursor-dot, .cursor-ring{ display:none !important; }
+    body.has-fine-pointer{ cursor:auto !important; }
+    body.has-fine-pointer a, body.has-fine-pointer button{ cursor:pointer !important; }
+  }
 </style>
 </head>
 <body>
@@ -373,7 +415,7 @@
   <div class="gate-inner">
     <div class="gate-tag mono">⚠ RISK NOTICE</div>
     <h2 id="gateTitle" class="gate-title display">Read before you enter.</h2>
-    <p class="gate-copy mono">Memecoins are high-risk, highly speculative assets. $RKC has no intrinsic value and no guaranteed return — it can lose all value at any time. Nothing on this site is financial advice. Only risk what you can afford to lose.</p>
+    <p class="gate-copy mono">Memecoins are high-risk, highly speculative assets. $RKC has no real value and no guaranteed return — it can lose all value at any time. Nothing on this site is financial advice. Only risk what you can afford to lose.</p>
     <button class="btn btn-primary" id="gateAccept" type="button">I UNDERSTAND</button>
   </div>
 </div>
@@ -384,12 +426,13 @@
 <div class="cursor-ring" id="cursorRing"></div>
 
 <nav>
-  <div class="logo">RKC<span>://</span>PROTOCOL <span class="live-dot" aria-hidden="true"></span></div>
+  <div class="logo">RKC<span>///</span>RED KITTEN CREW <span class="live-dot" aria-hidden="true"></span></div>
   <div class="nav-links">
     <a href="#mission">mission</a>
     <a href="#live">live</a>
+    <a href="#headband">tie the band</a>
     <a href="#community">community</a>
-    <a href="#pack">the pack</a>
+    <a href="#pack">the crew</a>
   </div>
   <div class="nav-right">
     <div class="nav-price mono"><span>$RKC</span> <b id="navPrice">syncing…</b></div>
@@ -404,7 +447,7 @@
     <div class="boot-log mono" id="bootLog"><span class="cursor"></span></div>
     <div class="eyebrow">SOLANA // COMMUNITY TAKEOVER</div>
     <h1 class="display glitch" id="glitchTitle">RED KITTEN <span class="red">CREW</span></h1>
-    <p class="hero-sub">A cat doesn't sell the dip. $RKC is a community takeover. No team allocation, no roadmap promises, just a crew that holds the line and prints the memes while the chart does whatever it wants.</p>
+    <p class="hero-sub">No team allocation, no roadmap promises, just a crew that holds the line and prints the memes while the chart does whatever it wants.</p>
 
     <div class="ca-row">
       <span class="ca-label mono">CA</span>
@@ -450,15 +493,15 @@
       <div class="bar"><i></i><i></i><i></i></div>
       <p class="prompt">project status</p>
       <p>Live on Solana. Liquidity locked. Daily memes.</p>
-      <p class="prompt">our mission</p>
+      <p class="prompt">signal received</p>
       <p>On May 11, 2026, after sixteen months of complete silence, the verified X account of Roaring Kitty posted a Pump.fun contract address. A handful of follow-up posts appeared in rapid succession. All of them were deleted within roughly thirty minutes. The immediate consensus was that the account had been compromised. A classic high-profile takeover narrative took hold almost instantly.</p>
       <p>Yet while the wider market moved on, a smaller community refused the easy explanation. They stayed. They archived. They compared timestamps, imagery, and older material frame by frame. What they uncovered was a series of quiet, precise coincidences that refused to line up with a simple hack.</p>
       <p>In the days that followed, these details formed the foundation of a different reading — that the posts were never an intrusion, but a signal. A deliberate, time-locked drop left for those willing to look past the surface noise. What the market called a hack, the community began to treat as the opening move of a longer game.</p>
     </div>
     <div class="manifesto-copy reveal reveal-d3">
-      <p>Red Kitten Crew exists because most tokens die the moment the founder stops posting. <strong>$RKC is run by the people holding it</strong>, not a team waiting to cash out.</p>
+      <p>Red Kitten Crew exists because most tokens die the moment the founder stops posting. <strong>$RKC is run by the people holding it</strong>.</p>
       <p>Here's the plan: build the strongest, funniest, most stubborn community on Solana, back it with full on-chain transparency, and let anyone verify every claim on this page themselves.</p>
-      <p><strong>Nothing here is a promise of profit.</strong> It's a group of people who like cats, like charts, and don't flinch when both turn red.</p>
+      <p><strong>Nothing here is a promise of profit.</strong> It's just a group of people who likes cats and memes.</p>
       <div class="manifesto-decrypt mono" id="decryptBox" tabindex="0" role="button" aria-label="Decrypt hidden transmission">
         <span id="decryptText">*#@!$%&#*!@%$&#*!@%&$#*!@%&$#*!@%&$</span>
         <span class="dhint" id="decryptHint">[ click or press enter to run decryption ]</span>
@@ -525,8 +568,37 @@
   <p class="chart-note reveal">Live chart and stats pulled directly from GeckoTerminal — refreshes automatically. Supply/burn figures are computed live from current price and FDV against the standard 1B pump.fun mint, and are approximate. Always verify the contract address before you trade: <a href="https://solscan.io/token/7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump" target="_blank" rel="noopener">view on Solscan</a>.</p>
 </section>
 
+<section id="headband">
+  <div class="section-tag reveal">03 // TIE THE BAND</div>
+  <h2 class="reveal reveal-d1">Tie the band. You're in.</h2>
+  <p class="band-lead reveal reveal-d2">Drop a photo — the band ties itself. Drag to fine-tune. Nothing leaves your browser.</p>
+
+  <div class="band-tool reveal reveal-d3">
+    <div class="band-stage">
+      <div class="band-frame" id="bandFrame">
+        <div class="band-drop" id="bandDrop" tabindex="0" role="button" aria-label="Upload a photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="28" height="28"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          <p>drop your photo<br><span>or click to upload</span></p>
+        </div>
+        <canvas id="bandCanvas" width="900" height="900"></canvas>
+        <input type="file" id="bandFileInput" accept="image/*" hidden>
+      </div>
+      <p class="band-hint mono" id="bandHint">drag to move · circle to rotate · square to resize · scroll/pinch also works</p>
+      <p class="band-status mono" id="bandStatus"></p>
+    </div>
+    <div class="band-controls" id="bandControls">
+      <button class="btn btn-ghost band-btn" id="bandAuto" type="button">Auto-place</button>
+      <button class="btn btn-ghost band-btn" id="bandChange" type="button">Change photo</button>
+      <button class="btn btn-ghost band-btn" id="bandFlip" type="button">Flip knot</button>
+      <button class="btn btn-ghost band-btn" id="bandReset" type="button">Reset</button>
+      <button class="btn btn-primary band-btn" id="bandDownload" type="button">Download PNG</button>
+      <a class="btn btn-ghost band-btn" id="bandShare" href="https://twitter.com/intent/tweet?text=Tied%20the%20band.%20%24RKC" target="_blank" rel="noopener">Share on X</a>
+    </div>
+  </div>
+</section>
+
 <section id="community">
-  <div class="section-tag reveal">03 // DIRECTORY</div>
+  <div class="section-tag reveal">04 // DIRECTORY</div>
   <h2 class="reveal reveal-d1">Pull up.</h2>
   <div class="directory reveal reveal-d2">
     <div class="dir-row">
@@ -563,7 +635,7 @@
 </section>
 
 <section id="pack">
-  <div class="section-tag reveal">04 // FOR THE CREW</div>
+  <div class="section-tag reveal">05 // FOR THE CREW</div>
   <h2 class="reveal reveal-d1">Made by the crew, for the crew.</h2>
   <div class="pack-grid reveal reveal-d2">
     <div class="pack-card"><img src="memes/meme-01.jpg" alt="RKC meme" loading="lazy"></div>
@@ -580,7 +652,7 @@
 </section>
 
 <footer>
-  <div class="logo mono">RKC<span style="color:var(--blood)">://</span>PROTOCOL</div>
+  <div class="logo mono">RKC<span style="color:var(--blood)">///</span>RED KITTEN CREW</div>
   <p class="disclaimer">$RKC is a community meme project with no intrinsic value or guaranteed outcome. Crypto assets are volatile and can lose all value. Nothing on this page is financial advice — verify the contract address yourself and do your own research before interacting with any token.</p>
 </footer>
 
@@ -1100,6 +1172,315 @@ startMatrixRain(document.getElementById('matrixCanvas'));
       if (window.syncLiveChartHeight) setTimeout(window.syncLiveChartHeight, 200);
     }
   }, 6000);
+})();
+
+/* ---------- headband generator ---------- */
+(function(){
+  const frame = document.getElementById('bandFrame');
+  const drop = document.getElementById('bandDrop');
+  const canvas = document.getElementById('bandCanvas');
+  const fileInput = document.getElementById('bandFileInput');
+  const hint = document.getElementById('bandHint');
+  const controls = document.getElementById('bandControls');
+  const flipBtn = document.getElementById('bandFlip');
+  const resetBtn = document.getElementById('bandReset');
+  const downloadBtn = document.getElementById('bandDownload');
+  const changeBtn = document.getElementById('bandChange');
+  const autoBtn = document.getElementById('bandAuto');
+  const status = document.getElementById('bandStatus');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  let img = null;
+  let imgCrop = null; // {sx,sy,sw,sh} mapping natural image px -> canvas px, set on load
+  const defaultState = { x: W*0.5, y: H*0.4, scale: 1, rot: 0, flipped: false };
+  let state = Object.assign({}, defaultState);
+
+  const rotHandleLocal = { x: 0, y: -95 };
+  const resizeHandleLocal = { x: 200, y: 78 };
+  const handleHit = 34;
+
+  function localToCanvas(lx, ly){
+    const fx = state.flipped ? -lx : lx;
+    const sx = fx * state.scale, sy = ly * state.scale;
+    const cos = Math.cos(state.rot), sin = Math.sin(state.rot);
+    return { x: state.x + sx*cos - sy*sin, y: state.y + sx*sin + sy*cos };
+  }
+  function canvasToLocal(px, py){
+    const dx = px - state.x, dy = py - state.y;
+    const cos = Math.cos(-state.rot), sin = Math.sin(-state.rot);
+    let lx = (dx*cos - dy*sin) / state.scale;
+    const ly = (dx*sin + dy*cos) / state.scale;
+    if (state.flipped) lx = -lx;
+    return { x: lx, y: ly };
+  }
+
+  function drawCoverImage(){
+    const ir = img.width/img.height, cr = W/H;
+    let sw, sh, sx, sy;
+    if (ir > cr){ sh = img.height; sw = sh*cr; sx = (img.width-sw)/2; sy = 0; }
+    else { sw = img.width; sh = sw/cr; sx = 0; sy = (img.height-sh)/2; }
+    imgCrop = { sx, sy, sw, sh };
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+  }
+
+  function drawHeadband(){
+    ctx.save();
+    ctx.translate(state.x, state.y);
+    ctx.rotate(state.rot);
+    if (state.flipped) ctx.scale(-1,1);
+    ctx.scale(state.scale, state.scale);
+
+    // main band
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-190, -27, 380, 54, 27);
+    else ctx.rect(-190, -27, 380, 54);
+    ctx.fillStyle = '#ff163a';
+    ctx.fill();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#7a0e14';
+    ctx.stroke();
+
+    // highlight stripe
+    ctx.beginPath();
+    ctx.rect(-180, -16, 360, 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fill();
+
+    // knot tails (right side)
+    ctx.save();
+    ctx.translate(150, 0);
+    ctx.beginPath();
+    ctx.moveTo(0,-8); ctx.lineTo(46,-52); ctx.lineTo(14,-6); ctx.closePath();
+    ctx.fillStyle = '#e4132a';
+    ctx.fill();
+    ctx.strokeStyle = '#7a0e14'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0,8); ctx.lineTo(46,52); ctx.lineTo(14,6); ctx.closePath();
+    ctx.fillStyle = '#e4132a';
+    ctx.fill();
+    ctx.stroke();
+    // knot bulge
+    ctx.beginPath();
+    ctx.arc(0,0,23,0,Math.PI*2);
+    ctx.fillStyle = '#ff163a';
+    ctx.fill();
+    ctx.lineWidth = 5; ctx.strokeStyle = '#7a0e14'; ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawHandles(){
+    const rh = localToCanvas(rotHandleLocal.x, rotHandleLocal.y);
+    const sh = localToCanvas(resizeHandleLocal.x, resizeHandleLocal.y);
+    const bx = localToCanvas(0,0);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,182,39,0.7)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(bx.x, bx.y); ctx.lineTo(rh.x, rh.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath(); ctx.arc(rh.x, rh.y, 13, 0, Math.PI*2);
+    ctx.fillStyle = '#ffb627'; ctx.fill();
+    ctx.strokeStyle = '#050303'; ctx.lineWidth = 2; ctx.stroke();
+
+    ctx.fillStyle = '#ffb627';
+    ctx.save();
+    ctx.translate(sh.x, sh.y); ctx.rotate(state.rot);
+    ctx.fillRect(-11,-11,22,22);
+    ctx.strokeStyle = '#050303'; ctx.lineWidth = 2; ctx.strokeRect(-11,-11,22,22);
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function redraw(withHandles){
+    ctx.clearRect(0,0,W,H);
+    if (img) drawCoverImage();
+    drawHeadband();
+    if (withHandles) drawHandles();
+  }
+
+  function getPos(e){
+    const rect = canvas.getBoundingClientRect();
+    const t = (e.touches && e.touches[0]) || e;
+    return {
+      x: (t.clientX - rect.left) * (W / rect.width),
+      y: (t.clientY - rect.top) * (H / rect.height)
+    };
+  }
+  function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+  let mode = null;
+  let start = null;
+  let startState = null;
+  const pinch = { active:false, startDist:0, startScale:1 };
+  const activePointers = new Map();
+
+  function pointerDown(e){
+    if (!img) return;
+    canvas.setPointerCapture && e.pointerId!=null && canvas.setPointerCapture(e.pointerId);
+    if (e.pointerId != null) activePointers.set(e.pointerId, getPos(e));
+
+    if (activePointers.size >= 2){
+      mode = 'pinch';
+      const pts = Array.from(activePointers.values());
+      pinch.startDist = dist(pts[0], pts[1]);
+      pinch.startScale = state.scale;
+      return;
+    }
+
+    const pos = getPos(e);
+    const rh = localToCanvas(rotHandleLocal.x, rotHandleLocal.y);
+    const sh = localToCanvas(resizeHandleLocal.x, resizeHandleLocal.y);
+
+    if (dist(pos, rh) < handleHit){
+      mode = 'rotate';
+      startState = Object.assign({}, state);
+      start = { angle: Math.atan2(pos.y - state.y, pos.x - state.x) - state.rot };
+    } else if (dist(pos, sh) < handleHit){
+      mode = 'resize';
+      startState = Object.assign({}, state);
+      start = { dist: dist(pos, {x:state.x,y:state.y}) || 1 };
+    } else {
+      mode = 'move';
+      startState = Object.assign({}, state);
+      start = { x: pos.x, y: pos.y };
+    }
+    e.preventDefault();
+  }
+
+  function pointerMove(e){
+    if (!img || !mode) return;
+    if (e.pointerId != null && activePointers.has(e.pointerId)) activePointers.set(e.pointerId, getPos(e));
+
+    if (mode === 'pinch'){
+      if (activePointers.size < 2) return;
+      const pts = Array.from(activePointers.values());
+      const d = dist(pts[0], pts[1]);
+      state.scale = clamp(pinch.startScale * (d / (pinch.startDist||1)), 0.3, 3.2);
+      redraw(true);
+      return;
+    }
+
+    const pos = getPos(e);
+    if (mode === 'move'){
+      state.x = startState.x + (pos.x - start.x);
+      state.y = startState.y + (pos.y - start.y);
+    } else if (mode === 'rotate'){
+      state.rot = Math.atan2(pos.y - state.y, pos.x - state.x) - start.angle;
+    } else if (mode === 'resize'){
+      const d = dist(pos, {x:state.x, y:state.y}) || 1;
+      state.scale = clamp(startState.scale * (d / start.dist), 0.3, 3.2);
+    }
+    redraw(true);
+    e.preventDefault();
+  }
+
+  function pointerUp(e){
+    if (e.pointerId != null) activePointers.delete(e.pointerId);
+    if (activePointers.size < 2) pinch.active = false;
+    if (activePointers.size === 0) mode = null;
+  }
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  canvas.addEventListener('pointerdown', pointerDown);
+  window.addEventListener('pointermove', pointerMove);
+  window.addEventListener('pointerup', pointerUp);
+  window.addEventListener('pointercancel', pointerUp);
+
+  canvas.addEventListener('wheel', (e)=>{
+    if (!img) return;
+    e.preventDefault();
+    state.scale = clamp(state.scale * (1 - e.deltaY*0.001), 0.3, 3.2);
+    redraw(true);
+  }, { passive:false });
+
+  function setStatus(msg){ if (status) status.textContent = msg || ''; }
+
+  async function autoPlace(silent){
+    if (!img || !imgCrop) return;
+    if (!('FaceDetector' in window)){
+      state = Object.assign({}, defaultState);
+      redraw(true);
+      setStatus(silent ? 'auto-detect not supported in this browser — drag to adjust' : 'auto-detect not supported here — drag to adjust');
+      return;
+    }
+    try {
+      setStatus('scanning for a face…');
+      const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+      const faces = await detector.detect(img);
+      if (!faces || !faces.length){
+        state = Object.assign({}, defaultState);
+        redraw(true);
+        setStatus('no face found — drag the band into place');
+        return;
+      }
+      const box = faces[0].boundingBox;
+      const scaleX = W / imgCrop.sw, scaleY = H / imgCrop.sh;
+      const fx = (box.x - imgCrop.sx) * scaleX;
+      const fy = (box.y - imgCrop.sy) * scaleY;
+      const fw = box.width * scaleX;
+      const fh = box.height * scaleY;
+
+      state.x = fx + fw / 2;
+      state.y = fy + fh * 0.32;
+      state.rot = 0;
+      state.scale = clamp((fw * 1.7) / 380, 0.3, 3.2);
+      redraw(true);
+      setStatus('band placed — drag to fine-tune');
+    } catch (err){
+      state = Object.assign({}, defaultState);
+      redraw(true);
+      setStatus('auto-detect failed — drag to adjust');
+    }
+  }
+
+  function loadFile(file){
+    if (!file || !file.type || file.type.indexOf('image') !== 0) return;
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = ()=>{
+      img = image;
+      state = Object.assign({}, defaultState);
+      frame.classList.add('has-image');
+      controls.classList.add('show');
+      redraw(true);
+      URL.revokeObjectURL(url);
+      autoPlace(true);
+    };
+    image.src = url;
+  }
+
+  drop.addEventListener('click', ()=> fileInput.click());
+  drop.addEventListener('keydown', (e)=>{ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); fileInput.click(); } });
+  fileInput.addEventListener('change', (e)=>{ if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+  ['dragenter','dragover'].forEach(evt=> drop.addEventListener(evt, (e)=>{ e.preventDefault(); drop.classList.add('drag-over'); }));
+  ['dragleave','drop'].forEach(evt=> drop.addEventListener(evt, (e)=>{ e.preventDefault(); drop.classList.remove('drag-over'); }));
+  drop.addEventListener('drop', (e)=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); });
+
+  changeBtn.addEventListener('click', ()=> fileInput.click());
+
+  autoBtn.addEventListener('click', ()=> autoPlace(false));
+
+  flipBtn.addEventListener('click', ()=>{ state.flipped = !state.flipped; redraw(true); });
+
+  resetBtn.addEventListener('click', ()=>{ state = Object.assign({}, defaultState); setStatus(''); redraw(true); });
+
+  downloadBtn.addEventListener('click', ()=>{
+    if (!img) return;
+    redraw(false);
+    const link = document.createElement('a');
+    link.download = 'rkc-headband.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    redraw(true);
+  });
 })();
 </script>
 
