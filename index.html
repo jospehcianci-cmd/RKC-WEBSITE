@@ -324,21 +324,6 @@
   }
   .pack-card:hover{ border-color:var(--blood); transform:translateY(-4px); }
   .pack-card img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .pack-card .idx{
-    position:absolute; top:10px; left:10px; font-family:'JetBrains Mono', monospace; font-size:0.65rem;
-    color:#f2e9e6; background:rgba(10,6,6,0.65); padding:3px 7px; letter-spacing:0.04em;
-  }
-  .pack-card .label{
-    position:absolute; bottom:10px; right:10px; font-family:'JetBrains Mono', monospace; font-size:0.62rem;
-    color:#f2e9e6; background:rgba(10,6,6,0.65); padding:3px 7px; text-align:right;
-  }
-  .pack-card.empty{
-    background:linear-gradient(160deg, var(--panel), var(--void));
-    display:flex; align-items:center; justify-content:center; border-style:dashed;
-  }
-  .pack-card.empty .plus{ font-family:'JetBrains Mono', monospace; font-size:1.8rem; color:var(--static); }
-  .pack-card.empty .label{ position:static; background:none; padding:0; }
-  .pack-card.empty .empty-inner{ display:flex; flex-direction:column; align-items:center; gap:8px; }
   .pack-footer{ margin-top:30px; font-family:'JetBrains Mono', monospace; font-size:0.84rem; color:var(--static); }
   .pack-footer a{ color:var(--blood); border-bottom:1px solid var(--blood); }
 
@@ -581,60 +566,15 @@
   <div class="section-tag reveal">04 // FOR THE CREW</div>
   <h2 class="reveal reveal-d1">Made by the crew, for the crew.</h2>
   <div class="pack-grid reveal reveal-d2">
-    <div class="pack-card">
-      <span class="idx mono">MEME_041</span>
-      <img src="memes/meme-01.jpg" alt="sell $RKC or draw 25 Uno meme" loading="lazy">
-      <span class="label mono">draw 25</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_042</span>
-      <img src="memes/meme-02.jpg" alt="choose your payment method cat meme" loading="lazy">
-      <span class="label mono">payment method</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_043</span>
-      <img src="memes/meme-03.jpg" alt="showing off RKC on the bus meme" loading="lazy">
-      <span class="label mono">show and tell</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_044</span>
-      <img src="memes/meme-04.jpg" alt="market crashing rkc holders titanic meme" loading="lazy">
-      <span class="label mono">market crashing</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_045</span>
-      <img src="memes/meme-05.jpg" alt="jeets call the ambulance meme" loading="lazy">
-      <span class="label mono">not for me</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_046</span>
-      <img src="memes/meme-06.jpg" alt="buy hold RKC to-do list meme" loading="lazy">
-      <span class="label mono">to-do list</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_047</span>
-      <img src="memes/meme-07.jpg" alt="RKC cat yearbook photo meme" loading="lazy">
-      <span class="label mono">yearbook</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_048</span>
-      <img src="memes/meme-08.jpg" alt="RKC cat GTA wanted level meme" loading="lazy">
-      <span class="label mono">wanted: 4 stars</span>
-    </div>
-    <div class="pack-card">
-      <span class="idx mono">MEME_049</span>
-      <img src="memes/meme-09.jpg" alt="type shi black cat meme" loading="lazy">
-      <span class="label mono">type shi</span>
-    </div>
-    <div class="pack-card empty">
-      <span class="idx mono">MEME_050</span>
-    </div>
-    <div class="pack-card empty">
-      <span class="idx mono">MEME_051</span>
-    </div>
-    <div class="pack-card empty">
-      <span class="idx mono">MEME_052</span>
-    </div>
+    <div class="pack-card"><img src="memes/meme-01.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-02.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-03.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-04.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-05.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-06.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-07.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-08.jpg" alt="RKC meme" loading="lazy"></div>
+    <div class="pack-card"><img src="memes/meme-09.jpg" alt="RKC meme" loading="lazy"></div>
   </div>
   <p class="pack-footer reveal">More memes at <a href="https://memedepot.com/d/rkc-memes" target="_blank" rel="noopener">memedepot.com/d/rkc-memes</a> — daily drops in <a href="https://t.me/RKCMEME" target="_blank" rel="noopener">t.me/RKCMEME</a></p>
 </section>
