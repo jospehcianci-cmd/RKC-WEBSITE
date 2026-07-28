@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>$RKC — Red Kitten Crew</title>
+<meta name="description" content="Red Kitten Crew ($RKC) — a community takeover on Solana. Live chart, live stats, no team, no floor to sell.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#050303;
+    --panel:#0d0707;
+    --panel2:#130808;
+    --blood:#ff163a;
+    --blood-dim:#e4132a;
+    --ember:#7a0e14;
+    --amber:#ffb627;
+    --green:#3ddc84;
+    --ash:#f1eae4;
+    --static:#5c4f4c;
+    --border: rgba(255,22,58,0.22);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth; scrollbar-width:thin; scrollbar-color:var(--ember) var(--void);}
+  ::-webkit-scrollbar{ width:11px; height:11px; }
+  ::-webkit-scrollbar-track{ background:var(--void); }
+  ::-webkit-scrollbar-thumb{ background:var(--ember); border:2px solid var(--void); border-radius:2px; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--blood); }
+  ::-webkit-scrollbar-corner{ background:var(--void); }
+  body{
+    background:var(--void); color:var(--ash);
+    font-family:'Inter', sans-serif; line-height:1.6;
+    overflow-x:hidden; cursor:default;
+  }
+  ::selection{ background:var(--blood); color:var(--void); }
+  a{color:inherit; text-decoration:none;}
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  .display{
+    font-family:'Anton', sans-serif; text-transform:uppercase;
+    letter-spacing:0.01em; line-height:0.9;
+  }
+  img,svg{ display:block; max-width:100%; }
+
+  /* ---------- overlays ---------- */
+  .scanlines{
+    pointer-events:none; position:fixed; inset:0; z-index:70;
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode:overlay; opacity:0.5;
+  }
+  .vignette{
+    pointer-events:none; position:fixed; inset:0; z-index:69;
+    box-shadow: inset 0 0 220px rgba(0,0,0,0.75);
+  }
+  .noise-glow{
+    pointer-events:none; position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 60% 40% at 15% 0%, rgba(255,22,58,0.14), transparent 60%),
+      radial-gradient(ellipse 50% 30% at 90% 15%, rgba(122,14,20,0.2), transparent 60%);
+  }
+  #matrixCanvas{ position:absolute; inset:0; width:100%; height:100%; opacity:0.5; z-index:0; }
+
+  /* ---------- entry gate ---------- */
+  .gate{
+    position:fixed; inset:0; z-index:200; background:var(--void);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    transition:background-color 1.4s ease 0.35s, opacity 0.25s ease 1.6s;
+  }
+  .gate.gate-hidden{ background-color:transparent; opacity:0; pointer-events:none; }
+  .gate.gate-hidden #gateCanvas{ animation:gateRainOut 1.6s ease forwards; }
+  @keyframes gateRainOut{ 0%{ opacity:0.6; } 70%{ opacity:0.45; } 100%{ opacity:0; } }
+  #gateCanvas{ position:absolute; inset:0; width:100%; height:100%; opacity:0.6; }
+  .gate-inner{ position:relative; z-index:2; max-width:560px; text-align:center; transition:opacity 0.5s ease, transform 0.5s ease; }
+  .gate.gate-hidden .gate-inner{ opacity:0; transform:translateY(-16px) scale(0.98); }
+  .gate-tag{ color:var(--blood); font-size:0.78rem; letter-spacing:0.18em; margin-bottom:18px; }
+  .gate-title{ font-size:clamp(1.9rem, 5vw, 3.1rem); text-transform:uppercase; margin-bottom:20px; color:var(--ash); }
+  .gate-copy{ color:#c9bdb8; font-size:0.86rem; line-height:1.7; margin-bottom:32px; }
+  body.gate-locked{ overflow:hidden; height:100vh; }
+  @media (prefers-reduced-motion: reduce){
+    .gate{ transition:none; }
+    .gate.gate-hidden #gateCanvas{ animation:none; }
+    .gate-inner{ transition:none; }
+  }
+
+  /* custom cursor (desktop pointer only) */
+  .cursor-dot{
+    position:fixed; top:0; left:0; width:8px; height:8px; border-radius:50%;
+    background:var(--blood); pointer-events:none; z-index:9999;
+    transform:translate(-50%,-50%); transition:transform 0.12s ease, opacity 0.2s ease;
+    box-shadow:0 0 12px 2px rgba(255,22,58,0.7);
+  }
+  .cursor-ring{
+    position:fixed; top:0; left:0; width:34px; height:34px; border-radius:50%;
+    border:1px solid rgba(255,22,58,0.5); pointer-events:none; z-index:9998;
+    transform:translate(-50%,-50%); transition:transform 0.18s ease, width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
+  }
+  body.has-fine-pointer{ cursor:none; }
+  body.has-fine-pointer a, body.has-fine-pointer button{ cursor:none; }
+
+  /* ---------- reveal ---------- */
+  .reveal{ opacity:0; transform:translateY(28px); transition:opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+  .reveal-d1{ transition-delay:0.08s; }
+  .reveal-d2{ transition-delay:0.16s; }
+  .reveal-d3{ transition-delay:0.24s; }
+
+  /* ---------- nav ---------- */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:60;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px clamp(20px,4vw,56px);
+    background:rgba(5,3,3,0.72); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .logo{ font-family:'JetBrains Mono', monospace; font-weight:700; font-size:1rem; letter-spacing:0.02em; display:flex; align-items:center; gap:8px;}
+  .logo span{ color:var(--blood); }
+  .live-dot{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 1.6s ease-in-out infinite; flex-shrink:0; }
+  @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.5; transform:scale(0.8); } }
+  .nav-links{ display:flex; gap:clamp(16px,2.2vw,32px); font-family:'JetBrains Mono', monospace; font-size:0.76rem; letter-spacing:0.05em; }
+  .nav-links a{ color:var(--static); transition:color 0.2s ease; }
+  .nav-links a:hover, .nav-links a:focus-visible{ color:var(--ash); }
+  .nav-links a::before{ content:'// '; color:var(--blood); }
+  .nav-right{ display:flex; align-items:center; gap:16px; }
+  .nav-price{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--static); display:flex; gap:6px; align-items:center;}
+  .nav-price b{ color:var(--ash); }
+  .nav-cta{
+    font-family:'JetBrains Mono', monospace; font-size:0.76rem; font-weight:700; letter-spacing:0.04em;
+    padding:9px 16px; border:1px solid var(--blood); color:var(--blood); transition:all 0.2s ease; white-space:nowrap;
+  }
+  .nav-cta:hover, .nav-cta:focus-visible{ background:var(--blood); color:var(--void); box-shadow:0 0 24px rgba(255,22,58,0.5); }
+  @media (max-width:900px){ .nav-links{display:none;} }
+  @media (max-width:560px){ .nav-price{display:none;} }
+
+  /* ---------- hero ---------- */
+  .hero{
+    min-height:100svh; display:flex; flex-direction:column; justify-content:center;
+    padding:130px clamp(20px,4vw,56px) 50px; position:relative; border-bottom:1px solid var(--border); overflow:hidden;
+  }
+  .hero-inner{ position:relative; z-index:2; }
+  .boot-log{ font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--static); margin-bottom:24px; min-height:1.4em; }
+  .boot-log .cursor{ display:inline-block; width:8px; height:1em; background:var(--blood); vertical-align:-2px; animation:blink 1s steps(1) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+  .eyebrow{ font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--blood); letter-spacing:0.16em; margin-bottom:18px; }
+  .hero h1{ font-size:clamp(2.2rem, 6.2vw, 5.4rem); color:var(--ash); }
+  .hero h1 .red{ color:var(--blood); text-shadow:0 0 46px rgba(255,22,58,0.5); }
+  .glitch{ position:relative; display:inline-block; }
+  .hero-sub{ max-width:600px; margin-top:22px; color:#c9bdb8; font-size:1.06rem; }
+
+  .ca-row{
+    margin-top:28px; display:inline-flex; align-items:stretch; gap:0;
+    border:1px solid var(--border); background:var(--panel); max-width:100%;
+  }
+  .ca-label{ font-family:'JetBrains Mono', monospace; font-size:0.7rem; color:var(--static); padding:0 14px; border-right:1px solid var(--border); white-space:nowrap; display:flex; align-items:center; }
+  .ca-value{ font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:var(--ash); padding:12px 16px; white-space:normal; word-break:break-all; display:flex; align-items:center; letter-spacing:0.02em; min-width:0; }
+  .ca-copy{
+    width:46px; min-height:46px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--ember); color:var(--ash); border:none; border-left:1px solid var(--border);
+    cursor:pointer; transition:background 0.2s ease;
+  }
+  .ca-copy svg{ width:18px; height:18px; }
+  .ca-copy:hover, .ca-copy:focus-visible{ background:var(--blood); }
+  .ca-copy.copied svg{ display:none; }
+  .ca-copy.copied::after{ content:'✓'; font-family:'JetBrains Mono', monospace; font-weight:700; font-size:0.85rem; }
+
+  /* ---------- buy menu ---------- */
+  .buy-menu{
+    position:fixed; z-index:80; min-width:240px;
+    background:var(--panel2); border:1px solid var(--blood); box-shadow:0 20px 60px rgba(0,0,0,0.6);
+    transform-origin:top center; transform:scaleY(0.4) translateY(-8px); opacity:0; pointer-events:none;
+    transition:transform 0.22s cubic-bezier(.2,1,.3,1), opacity 0.18s ease;
+  }
+  .buy-menu.menu-up{ transform-origin:bottom center; transform:scaleY(0.4) translateY(8px); }
+  .buy-menu.open{ transform:scaleY(1) translateY(0); opacity:1; pointer-events:auto; }
+  .buy-menu-label{ font-size:0.65rem; letter-spacing:0.12em; color:var(--static); padding:12px 16px 8px; }
+  .buy-menu-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 16px; border-top:1px solid var(--border); transition:background 0.15s ease, padding-left 0.15s ease;
+  }
+  .buy-menu-item:hover, .buy-menu-item:focus-visible{ background:rgba(255,22,58,0.1); padding-left:22px; }
+  .bm-name{ font-family:'Anton', sans-serif; text-transform:uppercase; font-size:1.05rem; color:var(--ash); }
+  .bm-meta{ font-size:0.68rem; color:var(--static); }
+
+  .hero-ctas{ display:flex; flex-wrap:wrap; gap:14px; margin-top:30px; align-items:center; }
+  .hero-ctas .btn{ min-width:230px; justify-content:center; }
+  .btn{
+    font-family:'JetBrains Mono', monospace; font-weight:700; font-size:0.85rem; letter-spacing:0.04em;
+    padding:16px 30px; display:inline-flex; align-items:center; gap:10px; transition:all 0.2s ease; border:1px solid transparent; position:relative;
+  }
+  .btn-primary{ background:var(--blood); color:var(--void); box-shadow:0 0 0 0 rgba(255,22,58,0.6); animation:btnPulse 2.4s ease-in-out infinite; }
+  .btn-primary:hover, .btn-primary:focus-visible{ transform:translateY(-2px); box-shadow:0 0 34px rgba(255,22,58,0.6); }
+  @keyframes btnPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,22,58,0.45);} 50%{ box-shadow:0 0 0 8px rgba(255,22,58,0);} }
+  .btn-ghost{ border-color:var(--static); color:var(--ash); }
+  .btn-ghost:hover, .btn-ghost:focus-visible{ border-color:var(--ash); background:rgba(241,234,228,0.05); }
+  .btn-mini{ font-family:'JetBrains Mono', monospace; font-size:0.74rem; color:var(--static); }
+  .btn-mini:hover{ color:var(--blood); }
+
+  .hero-stats{ display:flex; flex-wrap:wrap; gap:0; margin-top:48px; border-top:1px solid var(--border); width:100%; }
+  .hstat{ flex:1; min-width:150px; padding:16px 24px 18px; border-right:1px solid var(--border); }
+  .hstat:first-child{ padding-left:0; }
+  .hstat:last-child{ border-right:none; }
+  .hstat .k{ font-family:'JetBrains Mono', monospace; font-size:0.68rem; color:var(--static); letter-spacing:0.08em; }
+  .hstat .v{ font-family:'JetBrains Mono', monospace; font-size:1.15rem; font-weight:700; color:var(--ash); margin-top:4px; }
+  .hstat .v.up{ color:var(--green); }
+  .hstat .v.down{ color:var(--blood); }
+  @media (max-width:640px){
+    .hero-stats{ display:grid; grid-template-columns:repeat(2, 1fr); border-left:1px solid var(--border); }
+    .hstat{ min-width:0; border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:14px 16px; }
+    .hstat:first-child{ padding-left:16px; }
+    .hstat:nth-child(2n):not(:last-child){ border-right:none; }
+    .hstat:nth-child(-n+4){ border-bottom:1px solid var(--border); }
+    .hstat:last-child{ grid-column:1 / -1; border-right:none; border-bottom:none; }
+  }
+
+  /* ---------- ticker ---------- */
+  .ticker-wrap{
+    border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+    padding:16px 0; overflow:hidden; white-space:nowrap; background:#150a0a;
+    position:relative; z-index:1;
+  }
+  .ticker-track{
+    display:flex; width:max-content; font-family:'JetBrains Mono', monospace; font-size:0.8rem; line-height:1.2;
+    animation:tickPx linear infinite; animation-duration:24s;
+  }
+  .ticker-set{ display:flex; flex-shrink:0; }
+  .ticker-set span{ margin-right:44px; color:var(--static); white-space:nowrap; }
+  .ticker-set span b{ color:var(--ash); font-weight:500; }
+  .ticker-set .up{ color:var(--green); }
+  .ticker-set .down{ color:var(--blood); }
+  @keyframes tickPx{ from{ transform:translateX(0); } to{ transform:translateX(calc(-1 * var(--ticker-distance, 400px))); } }
+  @media (prefers-reduced-motion: reduce){ .ticker-track{ animation:none; } }
+
+  /* ---------- sections ---------- */
+  section{ padding:100px clamp(20px,4vw,56px); position:relative; border-bottom:1px solid var(--border); }
+  .section-tag{ font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--blood); letter-spacing:0.16em; margin-bottom:16px; }
+  h2{ font-family:'Anton', sans-serif; text-transform:uppercase; font-size:clamp(2rem, 5vw, 3.5rem); margin-bottom:34px; max-width:780px; }
+
+  /* ---------- manifesto ---------- */
+  .manifesto{ display:grid; grid-template-columns:1.1fr 1fr; gap:60px; align-items:start; }
+  @media (max-width:860px){ .manifesto{grid-template-columns:1fr;} }
+  .terminal-card{ background:var(--panel); border:1px solid var(--border); padding:26px; font-family:'JetBrains Mono', monospace; font-size:0.87rem; color:#d8cbc6; }
+  .terminal-card .bar{ display:flex; gap:6px; margin-bottom:18px; }
+  .terminal-card .bar i{ width:10px; height:10px; border-radius:50%; background:var(--ember); display:inline-block; }
+  .terminal-card .bar i:nth-child(1){ background:var(--blood); }
+  .terminal-card p{ margin-bottom:13px; }
+  .terminal-card .prompt::before{ content:'> '; color:var(--blood); }
+
+  .manifesto-copy{ background:var(--panel); border:1px solid var(--border); padding:26px; }
+  .manifesto-copy p{ margin-bottom:20px; color:#c9bdb8; max-width:520px; }
+  .manifesto-copy strong{ color:var(--ash); }
+  .manifesto-decrypt{
+    margin-top:10px; padding-top:18px; border-top:1px solid var(--border);
+    font-family:'JetBrains Mono', monospace; font-size:0.82rem; letter-spacing:0.05em;
+    color:var(--blood); cursor:pointer; transition:color 0.2s ease;
+  }
+  .manifesto-decrypt:hover, .manifesto-decrypt:focus-visible{ color:var(--ash); }
+  .manifesto-decrypt .dhint{ display:block; margin-top:8px; font-size:0.7rem; color:var(--static); }
+
+  /* ---------- decrypt block ---------- */
+  .decrypt-box{
+    border:1px solid var(--border); background:var(--panel); padding:26px; max-width:640px; margin-top:40px;
+    font-family:'JetBrains Mono', monospace; font-size:0.85rem; cursor:pointer; transition:border-color 0.2s ease;
+  }
+  .decrypt-box:hover, .decrypt-box:focus-visible{ border-color:var(--blood); }
+  .decrypt-box .dlabel{ color:var(--static); font-size:0.7rem; letter-spacing:0.1em; margin-bottom:10px; }
+  .decrypt-box .dtext{ color:var(--ash); min-height:2.6em; }
+  .decrypt-box .dhint{ color:var(--blood); font-size:0.72rem; margin-top:14px; }
+
+  /* ---------- live stat grid ---------- */
+  .stat-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:1px; background:var(--border); border:1px solid var(--border); width:100%; }
+  .stat-cell{ background:var(--panel); padding:22px 20px; }
+  .stat-cell .k{ font-family:'JetBrains Mono', monospace; font-size:0.68rem; color:var(--static); letter-spacing:0.08em; margin-bottom:8px; }
+  .stat-cell .v{ font-family:'JetBrains Mono', monospace; font-size:1.4rem; font-weight:700; color:var(--ash); }
+  .stat-cell .v.up{ color:var(--green); }
+  .stat-cell .v.down{ color:var(--blood); }
+  @media (max-width:700px){ .stat-grid{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:420px){ .stat-grid{ grid-template-columns:1fr; } }
+
+  /* ---------- live layout: chart + sidebar ---------- */
+  .live-layout{ display:grid; grid-template-columns:1.7fr 1fr; gap:24px; margin-top:34px; width:100%; align-items:start; }
+  @media (max-width:900px){ .live-layout{ grid-template-columns:1fr; } }
+
+  .chart-frame{ border:1px solid var(--border); background:var(--panel); display:flex; }
+  .chart-frame iframe{ width:100%; height:520px; border:0; display:block; flex:1; }
+  @media (max-width:900px){ .chart-frame iframe{ height:420px; } }
+  @media (max-width:640px){ .chart-frame iframe{ height:360px; } }
+  .chart-note{ font-family:'JetBrains Mono', monospace; font-size:0.72rem; color:var(--static); margin-top:24px; max-width:1000px; }
+  .chart-note a{ color:var(--blood); border-bottom:1px solid var(--blood); }
+
+  .live-sidebar{ display:flex; flex-direction:column; gap:20px; }
+  .side-card{ display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--border); padding:24px; }
+  .side-card-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .side-card-title{ font-size:0.72rem; letter-spacing:0.12em; color:var(--static); }
+  .side-live{ display:inline-flex; align-items:center; gap:6px; font-size:0.65rem; color:var(--green); letter-spacing:0.08em; }
+  .side-card .readout{ border:none; background:transparent; max-width:none; }
+  .side-card .readout-row{ padding:14px 0; }
+
+  .pill-row{ display:flex; gap:10px; margin-top:4px; flex-wrap:wrap; }
+  .pill{ font-family:'JetBrains Mono', monospace; font-size:0.66rem; font-weight:700; letter-spacing:0.05em; padding:7px 14px; border:1px solid var(--blood); border-radius:999px; color:var(--blood); }
+  .pill-dim{ border-color:var(--static); color:var(--static); }
+  .pill-note{ font-size:0.76rem; color:#c9bdb8; line-height:1.5; margin:16px 0; }
+  .burn-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:1px; background:var(--border); border:1px solid var(--border); }
+  .burn-cell{ background:var(--void); padding:16px; display:flex; flex-direction:column; justify-content:center; }
+  .bk{ font-size:0.62rem; letter-spacing:0.08em; color:var(--static); margin-bottom:6px; }
+  .bv{ font-size:1.15rem; font-weight:700; color:var(--ash); }
+  .bv.red{ color:var(--blood); }
+
+  /* ---------- readout ---------- */
+  .readout{ background:var(--panel); border:1px solid var(--border); max-width:720px; }
+  .readout-row{ display:flex; justify-content:space-between; align-items:center; padding:19px 24px; border-bottom:1px solid var(--border); font-family:'JetBrains Mono', monospace; gap:16px; flex-wrap:wrap; }
+  .readout-row:last-child{ border-bottom:none; }
+  .readout-row .key{ color:var(--static); font-size:0.83rem; letter-spacing:0.05em; }
+  .readout-row .val{ color:var(--ash); font-weight:700; font-size:0.98rem; text-align:right; word-break:break-all; }
+  .readout-row .val.amber{ color:var(--amber); }
+  .readout-row .val.green{ color:var(--green); }
+  .readout-note{ margin-top:18px; font-family:'JetBrains Mono', monospace; font-size:0.74rem; color:var(--static); max-width:560px; }
+
+
+  /* ---------- pack ---------- */
+  .pack-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; width:100%; }
+  .pack-card{
+    aspect-ratio:1/1; border:1px solid var(--border); position:relative; overflow:hidden;
+    transition:border-color 0.2s ease, transform 0.25s ease;
+  }
+  .pack-card:hover{ border-color:var(--blood); transform:translateY(-4px); }
+  .pack-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .pack-card .idx{
+    position:absolute; top:10px; left:10px; font-family:'JetBrains Mono', monospace; font-size:0.65rem;
+    color:#f2e9e6; background:rgba(10,6,6,0.65); padding:3px 7px; letter-spacing:0.04em;
+  }
+  .pack-card .label{
+    position:absolute; bottom:10px; right:10px; font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    color:#f2e9e6; background:rgba(10,6,6,0.65); padding:3px 7px; text-align:right;
+  }
+  .pack-card.empty{
+    background:linear-gradient(160deg, var(--panel), var(--void));
+    display:flex; align-items:center; justify-content:center; border-style:dashed;
+  }
+  .pack-card.empty .plus{ font-family:'JetBrains Mono', monospace; font-size:1.8rem; color:var(--static); }
+  .pack-card.empty .label{ position:static; background:none; padding:0; }
+  .pack-card.empty .empty-inner{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .pack-footer{ margin-top:30px; font-family:'JetBrains Mono', monospace; font-size:0.84rem; color:var(--static); }
+  .pack-footer a{ color:var(--blood); border-bottom:1px solid var(--blood); }
+
+  /* ---------- directory ---------- */
+  .directory{ max-width:1100px; border-top:1px solid var(--border); }
+  .dir-row{ border-bottom:1px solid var(--border); transition:padding-left 0.2s ease; }
+  .dir-row:hover{ padding-left:12px; }
+  .dir-row a{ display:flex; justify-content:space-between; align-items:center; width:100%; padding:22px 4px; }
+  .dir-name{ font-family:'Anton', sans-serif; text-transform:uppercase; font-size:1.35rem; }
+  .dir-meta{ font-family:'JetBrains Mono', monospace; font-size:0.76rem; color:var(--static); }
+  .dir-row:hover .dir-meta, .dir-row:focus-within .dir-meta{ color:var(--blood); }
+
+  /* ---------- footer ---------- */
+  footer{ padding:44px clamp(20px,4vw,56px) 100px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:20px; font-family:'JetBrains Mono', monospace; font-size:0.71rem; color:var(--static); }
+  footer .disclaimer{ max-width:560px; }
+  footer .logo{ font-size:0.88rem; }
+
+  /* ---------- sticky mobile CTA ---------- */
+  .sticky-cta{
+    position:fixed; bottom:0; left:0; right:0; z-index:55;
+    display:none; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 16px; background:rgba(5,3,3,0.92); backdrop-filter:blur(10px); border-top:1px solid var(--border);
+    transform:translateY(0); transition:transform 0.3s ease;
+  }
+  .sticky-cta.hide{ transform:translateY(110%); }
+  .sticky-cta .price{ font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--ash); }
+  .sticky-cta .price span{ color:var(--static); display:block; font-size:0.62rem; letter-spacing:0.08em; }
+  @media (max-width:760px){ .sticky-cta{ display:flex; } footer{ padding-bottom:96px; } }
+  @media (prefers-reduced-motion: reduce){ .sticky-cta{ transition:none; } }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .ticker, .btn-primary, .live-dot{ animation:none; }
+    .boot-log .cursor{ animation:none; }
+    .reveal{ opacity:1; transform:none; transition:none; }
+    #matrixCanvas{ display:none; }
+    .cursor-dot, .cursor-ring{ display:none; }
+    body.has-fine-pointer{ cursor:auto; }
+  }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:3px; }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gateOverlay" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <canvas id="gateCanvas" aria-hidden="true"></canvas>
+  <div class="gate-inner">
+    <div class="gate-tag mono">⚠ RISK NOTICE</div>
+    <h2 id="gateTitle" class="gate-title display">Read before you enter.</h2>
+    <p class="gate-copy mono">Memecoins are high-risk, highly speculative assets. $RKC has no intrinsic value and no guaranteed return — it can lose all value at any time. Nothing on this site is financial advice. Only risk what you can afford to lose.</p>
+    <button class="btn btn-primary" id="gateAccept" type="button">I UNDERSTAND</button>
+  </div>
+</div>
+
+<div class="scanlines"></div>
+<div class="vignette"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav>
+  <div class="logo">RKC<span>://</span>PROTOCOL <span class="live-dot" aria-hidden="true"></span></div>
+  <div class="nav-links">
+    <a href="#mission">mission</a>
+    <a href="#live">live</a>
+    <a href="#community">community</a>
+    <a href="#pack">the pack</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-price mono"><span>$RKC</span> <b id="navPrice">syncing…</b></div>
+    <button class="nav-cta buy-trigger" type="button" aria-haspopup="true" aria-expanded="false">BUY $RKC</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+  <div class="noise-glow"></div>
+  <div class="hero-inner">
+    <div class="boot-log mono" id="bootLog"><span class="cursor"></span></div>
+    <div class="eyebrow">SOLANA // COMMUNITY TAKEOVER</div>
+    <h1 class="display glitch" id="glitchTitle">RED KITTEN <span class="red">CREW</span></h1>
+    <p class="hero-sub">A cat doesn't sell the dip. $RKC is a community takeover. No team allocation, no roadmap promises, just a crew that holds the line and prints the memes while the chart does whatever it wants.</p>
+
+    <div class="ca-row">
+      <span class="ca-label mono">CA</span>
+      <span class="ca-value mono" id="caValue" title="7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump">7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump</span>
+      <button class="ca-copy" id="copyBtn" aria-label="Copy contract address">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="1"/><path d="M4 16V5a1 1 0 011-1h11"/></svg>
+      </button>
+    </div>
+
+    <div class="hero-ctas">
+      <button class="btn btn-primary buy-trigger" type="button" aria-haspopup="true" aria-expanded="false">BUY $RKC</button>
+      <a class="btn btn-ghost" href="https://t.me/RKCportal" target="_blank" rel="noopener">JOIN TELEGRAM</a>
+      <a class="btn-mini mono" href="https://www.geckoterminal.com/solana/pools/FzbYhPcoCuA2qSrV1s3j38RcQhP6c943p3KHYb6C5rCq" target="_blank" rel="noopener">view chart →</a>
+    </div>
+
+    <div class="hero-stats mono" id="heroStats">
+      <div class="hstat"><div class="k">PRICE</div><div class="v" id="s-price">—</div></div>
+      <div class="hstat"><div class="k">24H</div><div class="v" id="s-change">—</div></div>
+      <div class="hstat"><div class="k">LIQUIDITY</div><div class="v" id="s-liq">—</div></div>
+      <div class="hstat"><div class="k">MCAP (FDV)</div><div class="v" id="s-fdv">—</div></div>
+      <div class="hstat"><div class="k">VOLUME 24H</div><div class="v" id="s-vol">—</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker-track mono" id="tickerTrack">
+    <div class="ticker-set">
+      <span>$RKC <b class="t-price">syncing…</b></span>
+      <span>24H <b class="t-change">—</b></span>
+      <span>LIQUIDITY <b class="t-liq">—</b></span>
+      <span>VOLUME 24H <b class="t-vol">—</b></span>
+      <span>STATUS <b>CREW ONLINE</b></span>
+    </div>
+  </div>
+</div>
+
+<section id="mission">
+  <div class="section-tag reveal">01 // THE MISSION</div>
+  <h2 class="reveal reveal-d1">THE HEADBAND STAYS ON</h2>
+  <div class="manifesto">
+    <div class="terminal-card reveal reveal-d2">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <p class="prompt">project status</p>
+      <p>Live on Solana. Liquidity locked. Daily memes.</p>
+      <p class="prompt">our mission</p>
+      <p>On May 11, 2026, after sixteen months of complete silence, the verified X account of Roaring Kitty posted a Pump.fun contract address. A handful of follow-up posts appeared in rapid succession. All of them were deleted within roughly thirty minutes. The immediate consensus was that the account had been compromised. A classic high-profile takeover narrative took hold almost instantly.</p>
+      <p>Yet while the wider market moved on, a smaller community refused the easy explanation. They stayed. They archived. They compared timestamps, imagery, and older material frame by frame. What they uncovered was a series of quiet, precise coincidences that refused to line up with a simple hack.</p>
+      <p>In the days that followed, these details formed the foundation of a different reading — that the posts were never an intrusion, but a signal. A deliberate, time-locked drop left for those willing to look past the surface noise. What the market called a hack, the community began to treat as the opening move of a longer game.</p>
+    </div>
+    <div class="manifesto-copy reveal reveal-d3">
+      <p>Red Kitten Crew exists because most tokens die the moment the founder stops posting. <strong>$RKC is run by the people holding it</strong>, not a team waiting to cash out.</p>
+      <p>Here's the plan: build the strongest, funniest, most stubborn community on Solana, back it with full on-chain transparency, and let anyone verify every claim on this page themselves.</p>
+      <p><strong>Nothing here is a promise of profit.</strong> It's a group of people who like cats, like charts, and don't flinch when both turn red.</p>
+      <div class="manifesto-decrypt mono" id="decryptBox" tabindex="0" role="button" aria-label="Decrypt hidden transmission">
+        <span id="decryptText">*#@!$%&#*!@%$&#*!@%&$#*!@%&$#*!@%&$</span>
+        <span class="dhint" id="decryptHint">[ click or press enter to run decryption ]</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="live">
+  <div class="section-tag reveal">02 // LIVE FEED</div>
+  <h2 class="reveal reveal-d1">Nothing here is a promise. Everything here is verifiable.</h2>
+  <div class="stat-grid reveal reveal-d2">
+    <div class="stat-cell"><div class="k mono">PRICE USD</div><div class="v mono" id="g-price">—</div></div>
+    <div class="stat-cell"><div class="k mono">24H CHANGE</div><div class="v mono" id="g-change">—</div></div>
+    <div class="stat-cell"><div class="k mono">LIQUIDITY</div><div class="v mono" id="g-liq">—</div></div>
+    <div class="stat-cell"><div class="k mono">FDV / MCAP</div><div class="v mono" id="g-fdv">—</div></div>
+    <div class="stat-cell"><div class="k mono">VOL 24H</div><div class="v mono" id="g-vol">—</div></div>
+    <div class="stat-cell"><div class="k mono">PAIR AGE</div><div class="v mono" id="g-age">—</div></div>
+  </div>
+
+  <div class="live-layout">
+    <div class="chart-frame reveal reveal-d3">
+      <iframe id="gtChart" src="https://www.geckoterminal.com/solana/pools/FzbYhPcoCuA2qSrV1s3j38RcQhP6c943p3KHYb6C5rCq?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=15m&bg_color=050303" title="$RKC live GeckoTerminal chart" loading="lazy"></iframe>
+    </div>
+
+    <div class="live-sidebar">
+      <div class="side-card reveal reveal-d2">
+        <div class="side-card-head">
+          <span class="side-card-title mono">LIVE READOUT</span>
+          <span class="side-live mono"><span class="live-dot" aria-hidden="true"></span>LIVE</span>
+        </div>
+        <div class="readout mono">
+          <div class="readout-row"><span class="key">CONTRACT_ADDRESS</span><span class="val" id="r-ca" title="7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump">7HgfX…3Apump</span></div>
+          <div class="readout-row"><span class="key">NETWORK</span><span class="val">Solana</span></div>
+          <div class="readout-row"><span class="key">LIQUIDITY</span><span class="val amber" id="r-liq">syncing…</span></div>
+          <div class="readout-row"><span class="key">FDV (LIVE)</span><span class="val" id="r-fdv">syncing…</span></div>
+          <div class="readout-row"><span class="key">EST. SUPPLY</span><span class="val" id="r-supply">syncing…</span></div>
+          <div class="readout-row"><span class="key">OWNERSHIP</span><span class="val green">COMMUNITY-RUN</span></div>
+        </div>
+      </div>
+
+      <div class="side-card reveal reveal-d3">
+        <div class="side-card-head">
+          <span class="side-card-title mono">SUPPLY MECHANICS</span>
+          <span class="side-live mono"><span class="live-dot" aria-hidden="true"></span>LIVE</span>
+        </div>
+        <div class="burn-body">
+          <div class="pill-row">
+            <span class="pill">AUTO-BURN</span>
+            <span class="pill">AUTO-BUYBACK</span>
+          </div>
+          <p class="pill-note mono">Tokens permanently removed from circulating supply — tracked live against the original 1B mint.</p>
+          <div class="burn-grid mono">
+            <div class="burn-cell"><div class="bk">BURNED</div><div class="bv" id="b-burned">syncing…</div></div>
+            <div class="burn-cell"><div class="bk">USD VALUE</div><div class="bv red" id="b-usd">syncing…</div></div>
+            <div class="burn-cell"><div class="bk">% OF SUPPLY</div><div class="bv red" id="b-pct">syncing…</div></div>
+            <div class="burn-cell"><div class="bk">CURRENT SUPPLY</div><div class="bv" id="b-supply">syncing…</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="chart-note reveal">Live chart and stats pulled directly from GeckoTerminal — refreshes automatically. Supply/burn figures are computed live from current price and FDV against the standard 1B pump.fun mint, and are approximate. Always verify the contract address before you trade: <a href="https://solscan.io/token/7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump" target="_blank" rel="noopener">view on Solscan</a>.</p>
+</section>
+
+<section id="community">
+  <div class="section-tag reveal">03 // DIRECTORY</div>
+  <h2 class="reveal reveal-d1">Pull up.</h2>
+  <div class="directory reveal reveal-d2">
+    <div class="dir-row">
+      <a href="https://t.me/RKCportal" target="_blank" rel="noopener">
+        <span class="dir-name">Telegram</span>
+        <span class="dir-meta mono">t.me/RKCportal →</span>
+      </a>
+    </div>
+    <div class="dir-row">
+      <a href="https://x.com/i/communities/1791753586772189335" target="_blank" rel="noopener">
+        <span class="dir-name">X Community</span>
+        <span class="dir-meta mono">join on X →</span>
+      </a>
+    </div>
+    <div class="dir-row">
+      <a href="https://memedepot.com/d/rkc-memes" target="_blank" rel="noopener">
+        <span class="dir-name">Meme Depot</span>
+        <span class="dir-meta mono">full archive →</span>
+      </a>
+    </div>
+    <div class="dir-row">
+      <a href="https://dexscreener.com/solana/FzbYhPcoCuA2qSrV1s3j38RcQhP6c943p3KHYb6C5rCq" target="_blank" rel="noopener">
+        <span class="dir-name">DexScreener</span>
+        <span class="dir-meta mono">live chart →</span>
+      </a>
+    </div>
+    <div class="dir-row">
+      <a href="https://pump.fun/coin/7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump" target="_blank" rel="noopener">
+        <span class="dir-name">Pump.fun</span>
+        <span class="dir-meta mono">swap $RKC →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="pack">
+  <div class="section-tag reveal">04 // FOR THE CREW</div>
+  <h2 class="reveal reveal-d1">Made by the crew, for the crew.</h2>
+  <div class="pack-grid reveal reveal-d2">
+    <div class="pack-card">
+      <span class="idx mono">MEME_041</span>
+      <img src="memes/meme-01.jpg" alt="sell $RKC or draw 25 Uno meme" loading="lazy">
+      <span class="label mono">draw 25</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_042</span>
+      <img src="memes/meme-02.jpg" alt="choose your payment method cat meme" loading="lazy">
+      <span class="label mono">payment method</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_043</span>
+      <img src="memes/meme-03.jpg" alt="showing off RKC on the bus meme" loading="lazy">
+      <span class="label mono">show and tell</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_044</span>
+      <img src="memes/meme-04.jpg" alt="market crashing rkc holders titanic meme" loading="lazy">
+      <span class="label mono">market crashing</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_045</span>
+      <img src="memes/meme-05.jpg" alt="jeets call the ambulance meme" loading="lazy">
+      <span class="label mono">not for me</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_046</span>
+      <img src="memes/meme-06.jpg" alt="buy hold RKC to-do list meme" loading="lazy">
+      <span class="label mono">to-do list</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_047</span>
+      <img src="memes/meme-07.jpg" alt="RKC cat yearbook photo meme" loading="lazy">
+      <span class="label mono">yearbook</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_048</span>
+      <img src="memes/meme-08.jpg" alt="RKC cat GTA wanted level meme" loading="lazy">
+      <span class="label mono">wanted: 4 stars</span>
+    </div>
+    <div class="pack-card">
+      <span class="idx mono">MEME_049</span>
+      <img src="memes/meme-09.jpg" alt="type shi black cat meme" loading="lazy">
+      <span class="label mono">type shi</span>
+    </div>
+    <div class="pack-card empty">
+      <span class="idx mono">MEME_050</span>
+    </div>
+    <div class="pack-card empty">
+      <span class="idx mono">MEME_051</span>
+    </div>
+    <div class="pack-card empty">
+      <span class="idx mono">MEME_052</span>
+    </div>
+  </div>
+  <p class="pack-footer reveal">More memes at <a href="https://memedepot.com/d/rkc-memes" target="_blank" rel="noopener">memedepot.com/d/rkc-memes</a> — daily drops in <a href="https://t.me/RKCMEME" target="_blank" rel="noopener">t.me/RKCMEME</a></p>
+</section>
+
+<footer>
+  <div class="logo mono">RKC<span style="color:var(--blood)">://</span>PROTOCOL</div>
+  <p class="disclaimer">$RKC is a community meme project with no intrinsic value or guaranteed outcome. Crypto assets are volatile and can lose all value. Nothing on this page is financial advice — verify the contract address yourself and do your own research before interacting with any token.</p>
+</footer>
+
+<div class="sticky-cta">
+  <div class="price mono"><span>$RKC LIVE</span><span id="stickyPrice">syncing…</span></div>
+  <button class="btn btn-primary buy-trigger" type="button" style="padding:12px 20px; font-size:0.78rem;" aria-haspopup="true" aria-expanded="false">BUY</button>
+</div>
+
+<div class="buy-menu mono" id="buyMenu" role="menu" aria-hidden="true">
+  <div class="buy-menu-label">CHOOSE A ROUTE</div>
+  <a class="buy-menu-item" role="menuitem" target="_blank" rel="noopener" id="buy-jupiter">
+    <span class="bm-name">Jupiter</span><span class="bm-meta">swap →</span>
+  </a>
+  <a class="buy-menu-item" role="menuitem" target="_blank" rel="noopener" id="buy-pumpfun">
+    <span class="bm-name">pump.fun</span><span class="bm-meta">origin page →</span>
+  </a>
+  <a class="buy-menu-item" role="menuitem" target="_blank" rel="noopener" id="buy-dexscreener">
+    <span class="bm-name">DexScreener</span><span class="bm-meta">chart + trade →</span>
+  </a>
+</div>
+
+<script>
+/* ---------- boot log typewriter ---------- */
+(function(){
+  const lines = ["booting red_kitten_protocol...", "verifying pack integrity... ok", "pulling live chain data...", "status: crew online."];
+  const el = document.getElementById('bootLog');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced){ el.innerHTML = lines[lines.length-1]; return; }
+  let li=0, ci=0;
+  const cursor = '<span class="cursor"></span>';
+  function typeLine(){
+    if (li >= lines.length) return;
+    const line = lines[li];
+    if (ci <= line.length){ el.innerHTML = line.slice(0,ci) + cursor; ci++; setTimeout(typeLine, 20); }
+    else { li++; ci=0; setTimeout(typeLine, 340); }
+  }
+  typeLine();
+})();
+
+/* ---------- glitch scramble title ---------- */
+(function(){
+  const target = document.getElementById('glitchTitle');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&01';
+  const original = target.innerHTML;
+  const plain = target.textContent;
+  let frame = 0;
+  const total = 18;
+  function scrambleStep(){
+    if (frame >= total){ target.innerHTML = original; return; }
+    let out = '';
+    for (let i=0;i<plain.length;i++){
+      const ch = plain[i];
+      if (ch === '\n' || ch === ' '){ out += ch; continue; }
+      if (Math.random() < frame/total){ out += ch; }
+      else { out += chars[Math.floor(Math.random()*chars.length)]; }
+    }
+    target.textContent = out;
+    frame++;
+    setTimeout(scrambleStep, 45);
+  }
+  setTimeout(()=>{ scrambleStep(); }, 900);
+})();
+
+/* ---------- scroll reveal ---------- */
+(function(){
+  const items = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold:0.15 });
+  items.forEach(i=>io.observe(i));
+})();
+
+/* ---------- custom cursor (fine pointer only) ---------- */
+(function(){
+  if (!window.matchMedia('(pointer:fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.body.classList.add('has-fine-pointer');
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let rx=0, ry=0;
+  window.addEventListener('mousemove', (e)=>{
+    dot.style.left = e.clientX+'px'; dot.style.top = e.clientY+'px';
+    rx = e.clientX; ry = e.clientY;
+  });
+  function loop(){
+    const cur = ring.getBoundingClientRect();
+    const cx = cur.left + cur.width/2, cy = cur.top + cur.height/2;
+    ring.style.left = (cx + (rx-cx)*0.25)+'px';
+    ring.style.top = (cy + (ry-cy)*0.25)+'px';
+    requestAnimationFrame(loop);
+  }
+  loop();
+  document.querySelectorAll('a,button,.decrypt-box').forEach(el=>{
+    el.addEventListener('mouseenter', ()=>{ ring.style.width='54px'; ring.style.height='54px'; ring.style.borderColor='rgba(255,22,58,0.9)'; });
+    el.addEventListener('mouseleave', ()=>{ ring.style.width='34px'; ring.style.height='34px'; ring.style.borderColor='rgba(255,22,58,0.5)'; });
+  });
+})();
+
+/* ---------- matrix rain (reusable) ---------- */
+function startMatrixRain(canvas){
+  if (!canvas) return { stop(){} };
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return { stop(){} };
+  const ctx = canvas.getContext('2d');
+  const host = canvas.parentElement;
+  let w,h,cols,drops;
+  const glyphs = 'アイウエオカキクケコサシスセソ01幸猫赤$RKC'.split('');
+  function size(){
+    w = canvas.width = host.offsetWidth;
+    h = canvas.height = host.offsetHeight;
+    cols = Math.floor(w/22);
+    drops = new Array(cols).fill(0).map(()=>Math.random()*-40);
+  }
+  size();
+  window.addEventListener('resize', size);
+  let running = true, alive = true;
+  const io = new IntersectionObserver(entries=>{ entries.forEach(e=>{ running = e.isIntersecting; }); }, { threshold:0 });
+  io.observe(host);
+  function draw(){
+    if (!alive) return;
+    if (running){
+      ctx.fillStyle = 'rgba(5,3,3,0.14)';
+      ctx.fillRect(0,0,w,h);
+      ctx.font = '16px JetBrains Mono, monospace';
+      for (let i=0;i<cols;i++){
+        const g = glyphs[Math.floor(Math.random()*glyphs.length)];
+        const y = drops[i]*22;
+        ctx.fillStyle = Math.random() < 0.06 ? 'rgba(255,182,39,0.85)' : 'rgba(255,22,58,0.55)';
+        ctx.fillText(g, i*22, y);
+        if (y > h && Math.random() > 0.975) drops[i] = 0;
+        drops[i] += 0.55;
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  return { stop(){ alive = false; io.disconnect(); } };
+}
+startMatrixRain(document.getElementById('matrixCanvas'));
+
+/* ---------- sticky CTA: hide on scroll down, show on scroll up ---------- */
+(function(){
+  const bar = document.querySelector('.sticky-cta');
+  if (!bar) return;
+  let lastY = window.scrollY;
+  let ticking = false;
+  function onScroll(){
+    const y = window.scrollY;
+    if (y > lastY && y > 80){ bar.classList.add('hide'); }
+    else { bar.classList.remove('hide'); }
+    lastY = y;
+    ticking = false;
+  }
+  window.addEventListener('scroll', ()=>{
+    if (!ticking){ requestAnimationFrame(onScroll); ticking = true; }
+  }, { passive:true });
+})();
+
+
+/* ---------- ticker fill (seamless infinite banner at any width) ---------- */
+(function(){
+  const wrap = document.querySelector('.ticker-wrap');
+  const track = document.getElementById('tickerTrack');
+  if (!wrap || !track) return;
+  const PX_PER_SECOND = 55;
+
+  function fill(){
+    const original = track.querySelector('.ticker-set:not(.clone)');
+    if (!original) return;
+    track.querySelectorAll('.ticker-set.clone').forEach(el=>el.remove());
+
+    const setWidth = original.getBoundingClientRect().width;
+    if (!setWidth) return;
+    const containerWidth = wrap.offsetWidth;
+    const copiesNeeded = Math.max(1, Math.ceil((containerWidth*2)/setWidth));
+
+    for (let i=0;i<copiesNeeded;i++){
+      const clone = original.cloneNode(true);
+      clone.classList.add('clone');
+      track.appendChild(clone);
+    }
+    track.style.setProperty('--ticker-distance', setWidth+'px');
+    track.style.animationDuration = (setWidth/PX_PER_SECOND)+'s';
+  }
+
+  window.fillTicker = fill;
+  window.addEventListener('load', fill);
+  let resizeTimer;
+  window.addEventListener('resize', ()=>{ clearTimeout(resizeTimer); resizeTimer = setTimeout(fill, 200); });
+  setTimeout(fill, 500);
+})();
+
+
+/* ---------- sync chart height to sidebar (desktop only) ---------- */
+(function(){
+  const iframe = document.getElementById('gtChart');
+  const sidebar = document.querySelector('.live-sidebar');
+  if (!iframe || !sidebar) return;
+  const mq = window.matchMedia('(min-width:901px)');
+  function sync(){
+    if (mq.matches){
+      const h = sidebar.offsetHeight;
+      if (h > 300) iframe.style.height = h + 'px';
+    } else {
+      iframe.style.height = '';
+    }
+  }
+  window.addEventListener('load', sync);
+  window.addEventListener('resize', sync);
+  window.syncLiveChartHeight = sync;
+  setTimeout(sync, 400);
+})();
+
+/* ---------- entry gate ---------- */
+(function(){
+  const gate = document.getElementById('gateOverlay');
+  const btn = document.getElementById('gateAccept');
+  const canvas = document.getElementById('gateCanvas');
+  if (!gate || !btn) return;
+
+  if (sessionStorage.getItem('rkc_gate_seen') === '1'){
+    gate.style.display = 'none';
+    return;
+  }
+
+  document.body.classList.add('gate-locked');
+  const rain = startMatrixRain(canvas);
+  setTimeout(()=>{ btn.focus(); }, 300);
+
+  function dismiss(){
+    sessionStorage.setItem('rkc_gate_seen', '1');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    gate.classList.add('gate-hidden');
+    document.body.classList.remove('gate-locked');
+    const cleanup = ()=>{ gate.style.display = 'none'; rain.stop(); };
+    if (reduced){ cleanup(); } else { setTimeout(cleanup, 1850); }
+  }
+  btn.addEventListener('click', dismiss);
+})();
+
+/* ---------- copy CA ---------- */
+(function(){
+  const btn = document.getElementById('copyBtn');
+  const val = document.getElementById('caValue').getAttribute('title');
+  btn.addEventListener('click', async ()=>{
+    try{
+      await navigator.clipboard.writeText(val);
+      btn.classList.add('copied');
+      btn.setAttribute('aria-label','Copied contract address');
+      setTimeout(()=>{ btn.classList.remove('copied'); btn.setAttribute('aria-label','Copy contract address'); }, 1600);
+    }catch(e){ /* clipboard unavailable — silently ignore */ }
+  });
+})();
+
+/* ---------- buy menu (route picker) ---------- */
+(function(){
+  const TOKEN = '7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump';
+  const PAIR = 'FzbYhPcoCuA2qSrV1s3j38RcQhP6c943p3KHYb6C5rCq';
+  const jupUrl = 'https://jup.ag/swap?sell=So11111111111111111111111111111111111111112&buy='+TOKEN;
+  const dexUrl = 'https://dexscreener.com/solana/'+PAIR;
+  const pumpUrl = 'https://pump.fun/coin/'+TOKEN;
+
+  document.getElementById('buy-jupiter').href = jupUrl;
+  document.getElementById('buy-pumpfun').href = pumpUrl;
+  document.getElementById('buy-dexscreener').href = dexUrl;
+
+  const menu = document.getElementById('buyMenu');
+  const triggers = document.querySelectorAll('.buy-trigger');
+  let activeTrigger = null;
+
+  function closeMenu(){
+    menu.classList.remove('open');
+    menu.setAttribute('aria-hidden','true');
+    if (activeTrigger) activeTrigger.setAttribute('aria-expanded','false');
+    activeTrigger = null;
+  }
+  function openMenu(trigger){
+    const r = trigger.getBoundingClientRect();
+    const menuWidth = 240;
+    let left = r.left;
+    if (left + menuWidth > window.innerWidth - 16) left = window.innerWidth - menuWidth - 16;
+    if (left < 16) left = 16;
+    menu.style.left = left+'px';
+
+    // measure real height off-screen first so we know whether it fits below
+    menu.style.top = '-9999px';
+    menu.classList.remove('menu-up');
+    const menuHeight = menu.offsetHeight || 300;
+
+    const spaceBelow = window.innerHeight - r.bottom;
+    const spaceAbove = r.top;
+    const openUp = spaceBelow < (menuHeight + 20) && spaceAbove > spaceBelow;
+
+    if (openUp){
+      menu.style.top = Math.max(16, r.top - menuHeight - 10) + 'px';
+      menu.classList.add('menu-up');
+    } else {
+      menu.style.top = (r.bottom + 10)+'px';
+    }
+    menu.classList.add('open');
+    menu.setAttribute('aria-hidden','false');
+    trigger.setAttribute('aria-expanded','true');
+    activeTrigger = trigger;
+  }
+  triggers.forEach(t=>{
+    t.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if (activeTrigger === t){ closeMenu(); } else { openMenu(t); }
+    });
+  });
+  document.addEventListener('click', (e)=>{
+    if (!menu.contains(e.target)) closeMenu();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape') closeMenu();
+  });
+  window.addEventListener('resize', closeMenu);
+  window.addEventListener('scroll', closeMenu, { passive:true });
+})();
+
+/* ---------- decrypt easter egg ---------- */
+(function(){
+  const box = document.getElementById('decryptBox');
+  const textEl = document.getElementById('decryptText');
+  const hint = document.getElementById('decryptHint');
+  const message = "ARE YOU WATCHING CLOSELY?";
+  const cipher = "*#@!$%&#*!@%$&#*!@%&$#*!@%&$#*!@%&$";
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&*@!';
+  let state = 'encrypted'; // encrypted | decrypted
+  let animating = false;
+
+  function scrambleTo(target, onDone){
+    animating = true;
+    let frame = 0; const total = 26;
+    function step(){
+      if (frame >= total){ textEl.textContent = target; animating = false; onDone(); return; }
+      let out = '';
+      for (let i=0;i<target.length;i++){
+        const ch = target[i];
+        if (ch === ' '){ out += ch; continue; }
+        out += Math.random() < frame/total ? ch : chars[Math.floor(Math.random()*chars.length)];
+      }
+      textEl.textContent = out;
+      frame++;
+      setTimeout(step, 35);
+    }
+    step();
+  }
+
+  function run(){
+    if (animating) return;
+    if (state === 'encrypted'){
+      hint.textContent = '[ decrypting... ]';
+      scrambleTo(message, ()=>{ state = 'decrypted'; hint.textContent = '[ transmission decrypted — click to re-encrypt ]'; });
+    } else {
+      hint.textContent = '[ re-encrypting... ]';
+      scrambleTo(cipher, ()=>{ state = 'encrypted'; hint.textContent = '[ click or press enter to run decryption ]'; });
+    }
+  }
+  box.addEventListener('click', run);
+  box.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); run(); } });
+})();
+
+/* ---------- live data: GeckoTerminal (with DexScreener fallback) ---------- */
+(function(){
+  const TOKEN = '7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump';
+  const PAIR = 'FzbYhPcoCuA2qSrV1s3j38RcQhP6c943p3KHYb6C5rCq';
+  const fmtUsd = (n)=>{
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    if (n < 0.01) return '$'+n.toFixed(8);
+    if (n < 1) return '$'+n.toFixed(4);
+    return '$'+n.toLocaleString(undefined,{maximumFractionDigits:2});
+  };
+  const fmtCompact = (n)=>{
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    return '$'+Intl.NumberFormat('en',{notation:'compact', maximumFractionDigits:2}).format(n);
+  };
+  const fmtPct = (n)=>{
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    const sign = n > 0 ? '▲ ' : n < 0 ? '▼ ' : '';
+    return sign + n.toFixed(2) + '%';
+  };
+  const fmtAge = (ts)=>{
+    if (!ts) return '—';
+    const days = Math.floor((Date.now()-ts)/86400000);
+    if (days < 1) return '<1d';
+    if (days < 30) return days+'d';
+    return Math.floor(days/30)+'mo';
+  };
+
+  function setText(id, val, cls){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    if (cls){ el.classList.remove('up','down'); if(cls) el.classList.add(cls); }
+  }
+
+  function setTickerClass(className, val){
+    document.querySelectorAll('.'+className).forEach(el=>{ el.textContent = val; });
+  }
+
+  function applyStats(s){
+      const { price, change, liq, fdv, vol, age } = s;
+      const changeCls = change > 0 ? 'up' : change < 0 ? 'down' : '';
+
+      setText('navPrice', fmtUsd(price));
+      setText('s-price', fmtUsd(price));
+      setText('s-change', fmtPct(change), changeCls);
+      setText('s-liq', fmtCompact(liq));
+      setText('s-fdv', fmtCompact(fdv));
+      setText('s-vol', fmtCompact(vol));
+
+      setText('g-price', fmtUsd(price));
+      setText('g-change', fmtPct(change), changeCls);
+      setText('g-liq', fmtCompact(liq));
+      setText('g-fdv', fmtCompact(fdv));
+      setText('g-vol', fmtCompact(vol));
+      setText('g-age', fmtAge(age));
+
+      setText('r-liq', fmtCompact(liq));
+      setText('r-fdv', fmtCompact(fdv));
+      let currentSupply = null;
+      if (price && fdv){
+        currentSupply = fdv/price;
+        setText('r-supply', Intl.NumberFormat('en',{notation:'compact'}).format(currentSupply)+' $RKC (approx.)');
+      }
+
+      const INITIAL_SUPPLY = 1000000000; // standard pump.fun mint
+      if (currentSupply){
+        const burned = Math.max(0, INITIAL_SUPPLY - currentSupply);
+        const pct = (burned/INITIAL_SUPPLY)*100;
+        setText('b-burned', Intl.NumberFormat('en',{notation:'compact'}).format(burned)+' RKC');
+        setText('b-usd', fmtCompact(burned*price));
+        setText('b-pct', pct.toFixed(2)+'%');
+        setText('b-supply', Intl.NumberFormat('en',{notation:'compact'}).format(currentSupply));
+      }
+
+      setTickerClass('t-price', fmtUsd(price));
+      setTickerClass('t-change', fmtPct(change));
+      setTickerClass('t-liq', fmtCompact(liq));
+      setTickerClass('t-vol', fmtCompact(vol));
+      if (window.fillTicker) window.fillTicker();
+
+      setText('stickyPrice', fmtUsd(price) + '  ' + fmtPct(change));
+  }
+
+  function correctChartIframe(realAddress){
+    if (!realAddress) return;
+    const frame = document.getElementById('gtChart');
+    if (!frame || frame.dataset.corrected) return;
+    const wantedSrc = 'https://www.geckoterminal.com/solana/pools/'+realAddress+'?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=15m&bg_color=050303';
+    frame.src = wantedSrc;
+    frame.dataset.corrected = '1';
+  }
+
+  async function refresh(){
+    try{
+      const res = await fetch('https://api.geckoterminal.com/api/v2/networks/solana/tokens/'+TOKEN+'/pools', { cache:'no-store' });
+      if (!res.ok) throw new Error('bad response: '+res.status);
+      const data = await res.json();
+      const list = (data.data || []);
+      let pool = list.find(p => p.attributes && p.attributes.address && p.attributes.address.toLowerCase() === PAIR.toLowerCase());
+      if (!pool) pool = list.sort((a,b)=>parseFloat(b.attributes.reserve_in_usd||0)-parseFloat(a.attributes.reserve_in_usd||0))[0];
+      if (!pool) throw new Error('no pool in response');
+      const a = pool.attributes;
+      console.info('[RKC] live feed: GeckoTerminal');
+
+      applyStats({
+        price: parseFloat(a.base_token_price_usd),
+        change: a.price_change_percentage ? parseFloat(a.price_change_percentage.h24) : null,
+        liq: a.reserve_in_usd ? parseFloat(a.reserve_in_usd) : null,
+        fdv: a.fdv_usd ? parseFloat(a.fdv_usd) : (a.market_cap_usd ? parseFloat(a.market_cap_usd) : null),
+        vol: a.volume_usd ? parseFloat(a.volume_usd.h24) : null,
+        age: a.pool_created_at ? new Date(a.pool_created_at).getTime() : null
+      });
+      correctChartIframe(a.address);
+    }catch(err){
+      console.warn('[RKC] GeckoTerminal feed failed, trying DexScreener fallback:', err.message);
+      try{
+        const res2 = await fetch('https://api.dexscreener.com/token-pairs/v1/solana/'+TOKEN, { cache:'no-store' });
+        if (!res2.ok) throw new Error('fallback bad response: '+res2.status);
+        const data2 = await res2.json();
+        const list2 = Array.isArray(data2) ? data2 : (data2.pairs || []);
+        let pair2 = list2.find(p => p.pairAddress && p.pairAddress.toLowerCase() === PAIR.toLowerCase());
+        if (!pair2) pair2 = list2[0];
+        if (!pair2) throw new Error('fallback: no pair found');
+        console.info('[RKC] live feed: DexScreener (fallback)');
+
+        applyStats({
+          price: parseFloat(pair2.priceUsd),
+          change: pair2.priceChange ? pair2.priceChange.h24 : null,
+          liq: pair2.liquidity ? pair2.liquidity.usd : null,
+          fdv: pair2.fdv || pair2.marketCap || null,
+          vol: pair2.volume ? pair2.volume.h24 : null,
+          age: pair2.pairCreatedAt || null
+        });
+        correctChartIframe(pair2.pairAddress);
+      }catch(err2){
+        console.error('[RKC] live feed unavailable:', err2.message);
+        setText('navPrice', 'offline');
+        setText('stickyPrice', 'data unavailable — check GeckoTerminal');
+      }
+    }
+    if (window.syncLiveChartHeight) setTimeout(window.syncLiveChartHeight, 60);
+  }
+  refresh();
+  setInterval(refresh, 25000);
+
+  setTimeout(()=>{
+    const frame = document.getElementById('gtChart');
+    if (frame && !frame.dataset.corrected){
+      console.warn('[RKC] could not resolve exact pool address — falling back to DexScreener embed');
+      frame.src = 'https://dexscreener.com/solana/'+PAIR+'?embed=1&theme=dark&trades=0&info=0';
+      frame.dataset.corrected = '1';
+      if (window.syncLiveChartHeight) setTimeout(window.syncLiveChartHeight, 200);
+    }
+  }, 6000);
+})();
+</script>
+
+</body>
+</html>
