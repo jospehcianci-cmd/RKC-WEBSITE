@@ -197,6 +197,7 @@
   .btn{
     font-family:'JetBrains Mono', monospace; font-weight:700; font-size:0.85rem; letter-spacing:0.04em;
     padding:16px 30px; display:inline-flex; align-items:center; gap:10px; transition:all 0.2s ease; border:1px solid transparent; position:relative;
+    background:transparent; border-radius:0; cursor:pointer; appearance:none; -webkit-appearance:none; text-transform:none;
   }
   .btn-primary{ background:var(--blood); color:var(--void); box-shadow:0 0 0 0 rgba(255,22,58,0.6); animation:btnPulse 2.4s ease-in-out infinite; }
   .btn-primary:hover, .btn-primary:focus-visible{ transform:translateY(-2px); box-shadow:0 0 34px rgba(255,22,58,0.6); }
@@ -587,7 +588,6 @@
       <p class="band-status mono" id="bandStatus"></p>
     </div>
     <div class="band-controls" id="bandControls">
-      <button class="btn btn-ghost band-btn" id="bandAuto" type="button">Auto-place</button>
       <button class="btn btn-ghost band-btn" id="bandChange" type="button">Change photo</button>
       <button class="btn btn-ghost band-btn" id="bandFlip" type="button">Flip knot</button>
       <button class="btn btn-ghost band-btn" id="bandReset" type="button">Reset</button>
@@ -1188,7 +1188,6 @@ startMatrixRain(document.getElementById('matrixCanvas'));
   const resetBtn = document.getElementById('bandReset');
   const downloadBtn = document.getElementById('bandDownload');
   const changeBtn = document.getElementById('bandChange');
-  const autoBtn = document.getElementById('bandAuto');
   const status = document.getElementById('bandStatus');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -1246,6 +1245,24 @@ startMatrixRain(document.getElementById('matrixCanvas'));
     ctx.restore();
   }
 
+  function drawHandleLabel(x, y, text, above){
+    ctx.font = "600 13px 'JetBrains Mono', monospace";
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    const padX = 8, padY = 5, textH = 13;
+    const tw = ctx.measureText(text).width;
+    const w = tw + padX * 2, h = textH + padY * 2;
+    const lx = x - w / 2;
+    const ly = above ? y - h - 10 : y + 10;
+    ctx.fillStyle = 'rgba(5,3,3,0.85)';
+    ctx.fillRect(lx, ly, w, h);
+    ctx.strokeStyle = 'rgba(255,182,39,0.55)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(lx, ly, w, h);
+    ctx.fillStyle = '#ffb627';
+    ctx.fillText(text, lx + padX, ly + h / 2 + 1);
+  }
+
   function drawHandles(){
     const rh = localToCanvas(rotHandleLocal.x, rotHandleLocal.y);
     const sh = localToCanvas(resizeHandleLocal.x, resizeHandleLocal.y);
@@ -1256,18 +1273,43 @@ startMatrixRain(document.getElementById('matrixCanvas'));
     ctx.lineWidth = 2;
     ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.moveTo(bx.x, bx.y); ctx.lineTo(rh.x, rh.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx.x, bx.y); ctx.lineTo(sh.x, sh.y); ctx.stroke();
     ctx.setLineDash([]);
 
-    ctx.beginPath(); ctx.arc(rh.x, rh.y, 13, 0, Math.PI*2);
+    // rotate handle: amber circle with a rotation-arrow icon
+    ctx.beginPath(); ctx.arc(rh.x, rh.y, 16, 0, Math.PI*2);
     ctx.fillStyle = '#ffb627'; ctx.fill();
-    ctx.strokeStyle = '#050303'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = '#050303'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.save();
+    ctx.translate(rh.x, rh.y);
+    ctx.strokeStyle = '#050303'; ctx.fillStyle = '#050303'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    const startA = -0.3, endA = Math.PI*1.5;
+    ctx.arc(0, 0, 6.5, startA, endA);
+    ctx.stroke();
+    const ex = 6.5*Math.cos(endA), ey = 6.5*Math.sin(endA);
+    const nx = Math.cos(endA+Math.PI/2), ny = Math.sin(endA+Math.PI/2);
+    ctx.beginPath();
+    ctx.moveTo(ex + nx*4.5, ey + ny*4.5);
+    ctx.lineTo(ex - ny*3.5, ey + nx*3.5);
+    ctx.lineTo(ex + ny*3.5, ey - nx*3.5);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+    drawHandleLabel(rh.x, rh.y, 'rotate', true);
 
-    ctx.fillStyle = '#ffb627';
+    // resize handle: green square with a diagonal double-arrow icon
     ctx.save();
     ctx.translate(sh.x, sh.y); ctx.rotate(state.rot);
-    ctx.fillRect(-11,-11,22,22);
-    ctx.strokeStyle = '#050303'; ctx.lineWidth = 2; ctx.strokeRect(-11,-11,22,22);
+    ctx.fillStyle = '#3ddc84';
+    ctx.fillRect(-14,-14,28,28);
+    ctx.strokeStyle = '#050303'; ctx.lineWidth = 2.5; ctx.strokeRect(-14,-14,28,28);
+    ctx.strokeStyle = '#050303'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-6,-6); ctx.lineTo(6,6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-6,-6); ctx.lineTo(-6,-2); ctx.moveTo(-6,-6); ctx.lineTo(-2,-6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6,6); ctx.lineTo(6,2); ctx.moveTo(6,6); ctx.lineTo(2,6); ctx.stroke();
     ctx.restore();
+    drawHandleLabel(sh.x, sh.y, 'resize', false);
+
     ctx.restore();
   }
 
@@ -1439,8 +1481,6 @@ startMatrixRain(document.getElementById('matrixCanvas'));
   drop.addEventListener('drop', (e)=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadFile(f); });
 
   changeBtn.addEventListener('click', ()=> fileInput.click());
-
-  autoBtn.addEventListener('click', ()=> autoPlace(false));
 
   flipBtn.addEventListener('click', ()=>{ state.flipped = !state.flipped; redraw(true); });
 
