@@ -268,7 +268,6 @@
   .band-drop p span{ color:var(--static); font-size:0.72rem; }
   .band-frame.has-image .band-drop{ display:none; }
   .band-hint{ font-size:0.7rem; color:var(--static); text-align:center; letter-spacing:0.02em; }
-  .band-status{ font-size:0.72rem; color:var(--amber); text-align:center; min-height:1em; }
   .band-controls{ display:none; flex-wrap:wrap; gap:12px; justify-content:center; }
   .band-controls.show{ display:flex; }
   .band-btn{ padding:12px 18px; font-size:0.76rem; }
@@ -585,7 +584,6 @@
         <input type="file" id="bandFileInput" accept="image/*" hidden>
       </div>
       <p class="band-hint mono" id="bandHint">drag to move · circle to rotate · square to resize · scroll/pinch also works</p>
-      <p class="band-status mono" id="bandStatus"></p>
     </div>
     <div class="band-controls" id="bandControls">
       <button class="btn btn-ghost band-btn" id="bandChange" type="button">Change photo</button>
@@ -1188,7 +1186,6 @@ startMatrixRain(document.getElementById('matrixCanvas'));
   const resetBtn = document.getElementById('bandReset');
   const downloadBtn = document.getElementById('bandDownload');
   const changeBtn = document.getElementById('bandChange');
-  const status = document.getElementById('bandStatus');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -1416,24 +1413,19 @@ startMatrixRain(document.getElementById('matrixCanvas'));
     redraw(true);
   }, { passive:false });
 
-  function setStatus(msg){ if (status) status.textContent = msg || ''; }
-
-  async function autoPlace(silent){
+  async function autoPlace(){
     if (!img || !imgCrop) return;
     if (!('FaceDetector' in window)){
       state = Object.assign({}, defaultState);
       redraw(true);
-      setStatus(silent ? 'auto-detect not supported in this browser — drag to adjust' : 'auto-detect not supported here — drag to adjust');
       return;
     }
     try {
-      setStatus('scanning for a face…');
       const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
       const faces = await detector.detect(img);
       if (!faces || !faces.length){
         state = Object.assign({}, defaultState);
         redraw(true);
-        setStatus('no face found — drag the band into place');
         return;
       }
       const box = faces[0].boundingBox;
@@ -1448,11 +1440,9 @@ startMatrixRain(document.getElementById('matrixCanvas'));
       state.rot = 0;
       state.scale = clamp((fw * 1.7) / 380, 0.3, 3.2);
       redraw(true);
-      setStatus('band placed — drag to fine-tune');
     } catch (err){
       state = Object.assign({}, defaultState);
       redraw(true);
-      setStatus('auto-detect failed — drag to adjust');
     }
   }
 
@@ -1467,7 +1457,7 @@ startMatrixRain(document.getElementById('matrixCanvas'));
       controls.classList.add('show');
       redraw(true);
       URL.revokeObjectURL(url);
-      autoPlace(true);
+      autoPlace();
     };
     image.src = url;
   }
@@ -1484,7 +1474,7 @@ startMatrixRain(document.getElementById('matrixCanvas'));
 
   flipBtn.addEventListener('click', ()=>{ state.flipped = !state.flipped; redraw(true); });
 
-  resetBtn.addEventListener('click', ()=>{ state = Object.assign({}, defaultState); setStatus(''); redraw(true); });
+  resetBtn.addEventListener('click', ()=>{ state = Object.assign({}, defaultState); redraw(true); });
 
   downloadBtn.addEventListener('click', ()=>{
     if (!img) return;
