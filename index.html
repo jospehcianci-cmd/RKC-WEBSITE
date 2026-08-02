@@ -430,8 +430,8 @@
   <div class="nav-links">
     <a href="#mission">mission</a>
     <a href="#live">live</a>
-    <a href="#headband">tie the band</a>
     <a href="#community">community</a>
+    <a href="#headband">tie the band</a>
     <a href="#pack">the crew</a>
   </div>
   <div class="nav-right">
@@ -568,35 +568,8 @@
   <p class="chart-note reveal">Live chart and stats pulled directly from GeckoTerminal — refreshes automatically. Supply/burn figures are computed live from current price and FDV against the standard 1B pump.fun mint, and are approximate. Always verify the contract address before you trade: <a href="https://solscan.io/token/7HgfXftRBBqsYtAEYcqjGLQrNJLL6Tww9ek4rE3Apump" target="_blank" rel="noopener">view on Solscan</a>.</p>
 </section>
 
-<section id="headband">
-  <div class="section-tag reveal">03 // TIE THE BAND</div>
-  <h2 class="reveal reveal-d1">Tie the band. You're in.</h2>
-  <p class="band-lead reveal reveal-d2">Drop a photo the band ties itself. Resize or rotate if needed.</p>
-
-  <div class="band-tool reveal reveal-d3">
-    <div class="band-stage">
-      <div class="band-frame" id="bandFrame">
-        <div class="band-drop" id="bandDrop" tabindex="0" role="button" aria-label="Upload a photo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="28" height="28"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-          <p>drop your photo<br><span>or click to upload</span></p>
-        </div>
-        <canvas id="bandCanvas" width="900" height="900"></canvas>
-        <input type="file" id="bandFileInput" accept="image/*" hidden>
-      </div>
-      <p class="band-hint mono" id="bandHint">drag to move · circle to rotate · square to resize · scroll/pinch also works</p>
-    </div>
-    <div class="band-controls" id="bandControls">
-      <button class="btn btn-ghost band-btn" id="bandChange" type="button">Change photo</button>
-      <button class="btn btn-ghost band-btn" id="bandFlip" type="button">Flip knot</button>
-      <button class="btn btn-ghost band-btn" id="bandReset" type="button">Reset</button>
-      <button class="btn btn-primary band-btn" id="bandDownload" type="button">Download PNG</button>
-      <a class="btn btn-ghost band-btn" id="bandShare" href="https://twitter.com/intent/tweet?text=Tied%20the%20band.%20%24RKC" target="_blank" rel="noopener">Share on X</a>
-    </div>
-  </div>
-</section>
-
 <section id="community">
-  <div class="section-tag reveal">04 // DIRECTORY</div>
+  <div class="section-tag reveal">03 // DIRECTORY</div>
   <h2 class="reveal reveal-d1">Pull up.</h2>
   <div class="directory reveal reveal-d2">
     <div class="dir-row">
@@ -628,6 +601,33 @@
         <span class="dir-name">Pump.fun</span>
         <span class="dir-meta mono">swap $RKC →</span>
       </a>
+    </div>
+  </div>
+</section>
+
+<section id="headband">
+  <div class="section-tag reveal">04 // TIE THE BAND</div>
+  <h2 class="reveal reveal-d1">Tie the band. You're in.</h2>
+  <p class="band-lead reveal reveal-d2">Drop a photo the band ties itself. Resize or rotate if needed.</p>
+
+  <div class="band-tool reveal reveal-d3">
+    <div class="band-stage">
+      <div class="band-frame" id="bandFrame">
+        <div class="band-drop" id="bandDrop" tabindex="0" role="button" aria-label="Upload a photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="28" height="28"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          <p>drop your photo<br><span>or click to upload</span></p>
+        </div>
+        <canvas id="bandCanvas" width="900" height="900"></canvas>
+        <input type="file" id="bandFileInput" accept="image/*" hidden>
+      </div>
+      <p class="band-hint mono" id="bandHint">drag to move · circle to rotate · square to resize · scroll/pinch also works</p>
+    </div>
+    <div class="band-controls" id="bandControls">
+      <button class="btn btn-ghost band-btn" id="bandChange" type="button">Change photo</button>
+      <button class="btn btn-ghost band-btn" id="bandFlip" type="button">Flip knot</button>
+      <button class="btn btn-ghost band-btn" id="bandReset" type="button">Reset</button>
+      <button class="btn btn-primary band-btn" id="bandDownload" type="button">Download PNG</button>
+      <a class="btn btn-ghost band-btn" id="bandShare" href="https://twitter.com/intent/tweet?text=Tied%20the%20band.%20%24RKC" target="_blank" rel="noopener">Share on X</a>
     </div>
   </div>
 </section>
